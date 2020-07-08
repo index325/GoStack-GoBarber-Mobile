@@ -1,17 +1,19 @@
 import React, {
   useEffect,
+  useState,
+  useCallback,
   useRef,
   useImperativeHandle,
   forwardRef,
-  useState,
-  useCallback,
-} from "react";
-import { Container, TextInput, Icon } from "./styles";
-import { useField } from "@unform/core";
-import { TextInputProps } from "react-native";
+} from 'react';
+import { TextInputProps } from 'react-native';
+import { useField } from '@unform/core';
+
+import { Container, TextInput, Icon } from './styles';
 
 interface InputProps extends TextInputProps {
   name: string;
+  // no ícone da WEB era repassado um componente, já no ReactNative é uma string
   icon: string;
 }
 
@@ -25,11 +27,13 @@ interface InputRef {
 
 const Input: React.RefForwardingComponent<InputRef, InputProps> = (
   { name, icon, ...rest },
-  ref
+  ref,
 ) => {
   const inputElementRef = useRef<any>(null);
-  const { registerField, defaultValue, fieldName, error } = useField(name);
+
+  const { registerField, defaultValue = '', fieldName, error } = useField(name);
   const inputValueRef = useRef<InputValueReference>({ value: defaultValue });
+
   const [isFocused, setIsFocused] = useState(false);
   const [isFilled, setIsFilled] = useState(false);
 
@@ -39,7 +43,8 @@ const Input: React.RefForwardingComponent<InputRef, InputProps> = (
 
   const handleInputBlur = useCallback(() => {
     setIsFocused(false);
-    setIsFilled(!!inputValueRef.current?.value);
+
+    setIsFilled(!!inputValueRef.current.value);
   }, []);
 
   useImperativeHandle(ref, () => ({
@@ -52,34 +57,35 @@ const Input: React.RefForwardingComponent<InputRef, InputProps> = (
     registerField<string>({
       name: fieldName,
       ref: inputValueRef.current,
-      path: "value",
-      setValue(ref: any, value) {
+      path: 'value',
+      setValue(value: string) {
         inputValueRef.current.value = value;
         inputElementRef.current.setNativeProps({ text: value });
       },
       clearValue() {
-        inputValueRef.current.value = "";
+        inputValueRef.current.value = '';
         inputElementRef.current.clear();
       },
     });
-  }, [fieldName, registerField]);
+  }, [registerField, fieldName]);
+
   return (
     <Container isFocused={isFocused} isErrored={!!error}>
       <Icon
         name={icon}
         size={20}
-        color={isFocused || isFilled ? "#ff9000" : "#666360"}
+        color={isFocused || isFilled ? '#ff9000' : '#666360'}
       />
       <TextInput
         ref={inputElementRef}
-        onChangeText={(value) => {
-          inputValueRef.current.value = value;
-        }}
-        onFocus={handleInputFocus}
-        onBlur={handleInputBlur}
-        defaultValue={defaultValue}
         keyboardAppearance="dark"
         placeholderTextColor="#666360"
+        defaultValue={defaultValue}
+        onFocus={handleInputFocus}
+        onBlur={handleInputBlur}
+        onChangeText={value => {
+          inputValueRef.current.value = value;
+        }}
         {...rest}
       />
     </Container>
